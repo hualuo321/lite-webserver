@@ -2,9 +2,10 @@
 一个极简版的 webserver 项目
 
 # 项目地址
-[lite-webserver](https://github.com/hualuo321/lite-webserver)
-
-git clone https://github.com/hualuo321/lite-webserver.git
+- [本项目地址](https://github.com/hualuo321/lite-webserver)
+- git clone https://github.com/hualuo321/lite-webserver.git
+- [参考项目地址](https://github.com/markparticle/WebServer)
+- git clone https://github.com/markparticle/WebServer.git
 
 # 前置知识
 - [文件描述符](https://blog.csdn.net/yushuaigee/article/details/107883964)
@@ -15,5 +16,6 @@ git clone https://github.com/hualuo321/lite-webserver.git
 - [socket编程](https://blog.csdn.net/hguisu/article/details/7445768)
 - [TCP通信代码讲解 p[10-23]](https://www.bilibili.com/video/BV1iJ411S7UA/?vd_source=81f0dcb2512acfe5b638a9201d2545c4)
 - [I/O 多路复用：select/poll/epoll](https://xiaolincoding.com/os/8_network_system/selete_poll_epoll.html)
+- [select模式代码讲解 p[52-63]](https://www.bilibili.com/video/BV1iJ411S7UA/?vd_source=81f0dcb2512acfe5b638a9201d2545c4)
+- [epoll模式代码讲解 p[71-85]](https://www.bilibili.com/video/BV1iJ411S7UA/?vd_source=81f0dcb2512acfe5b638a9201d2545c4)
 - [高性能网络模式：Reactor 和 Proactor](https://xiaolincoding.com/os/8_network_system/reactor.html)
-- [select模式代码讲解 p[52-]](https://www.bilibili.com/video/BV1iJ411S7UA/?vd_source=81f0dcb2512acfe5b638a9201d2545c4)
