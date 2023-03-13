@@ -18,9 +18,9 @@ public:
     explicit Epoller(int maxEvent = 1024);  // 最大事件数
 
     ~Epoller();
-
+    // 从epoll中添加fd
     bool AddFd(int fd, uint32_t events);
-
+    // 修改fd
     bool ModFd(int fd, uint32_t events);
 
     bool DelFd(int fd);

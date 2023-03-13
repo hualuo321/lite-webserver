@@ -69,7 +69,7 @@ private:
     std::unique_ptr<HeapTimer> timer_;          // 定时器
     std::unique_ptr<ThreadPool> threadpool_;    // 线程池
     std::unique_ptr<Epoller> epoller_;          // epoll 对象
-    std::unordered_map<int, HttpConn> users_;   // 客户端的连接信息
+    std::unordered_map<int, HttpConn> users_;   // 客户端连接的连接信息<fd, 连接信息>
 };
 
 

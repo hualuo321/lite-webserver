@@ -19,9 +19,3 @@ int main() {
 
     server.Start();                             // 开始服务
 }
-
-
-// 学习
-// ET LT 触发
-// epoll api
-//

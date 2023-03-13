@@ -19,6 +19,7 @@
 #include "httprequest.h"
 #include "httpresponse.h"
 
+/* 用户连接信息 */
 class HttpConn {
 public:
     HttpConn();
@@ -51,10 +52,11 @@ public:
         return request_.IsKeepAlive();
     }
 
+    // 静态变量被共享
     static bool isET;                       // 边缘触发
     static const char* srcDir;              // 资源目录
-    static std::atomic<int> userCount;      // 用户数
-    
+    static std::atomic<int> userCount;      // 当前客户端连接数
+
 private:
     int fd_;
     struct  sockaddr_in addr_;

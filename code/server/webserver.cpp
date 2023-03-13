@@ -1,45 +1,39 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-17
- * @copyleft Apache 2.0
- */
-
 #include "webserver.h"
-
 using namespace std;
+
 
 WebServer::WebServer(
         int port, int trigMode, int timeoutMS, bool OptLinger,
         int sqlPort, const char* sqlUser, const  char* sqlPwd,
         const char* dbName, int connPoolNum, int threadNum,
         bool openLog, int logLevel, int logQueSize):
-        port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false),
-        timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
-    srcDir_ = getcwd(nullptr, 256);                 // 获取当前工作路径 /home/xch/Codes/cpp/WebServer
-    assert(srcDir_);                                // 断言
-    strncat(srcDir_, "/resources/", 16);            // 资源路径 /home/xch/Codes/cpp/WebServer/resources/
-    HttpConn::userCount = 0;                        // 用户数
-    HttpConn::srcDir = srcDir_;                     // 资源路径赋值
-    SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 初始化连接池
+    port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false),
+    timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
+        srcDir_ = getcwd(nullptr, 256);                 // 获取当前工作路径 /home/xch/Codes/cpp/WebServer
+        assert(srcDir_);                                // 断言
+        strncat(srcDir_, "/resources/", 16);            // 资源路径 /home/xch/Codes/cpp/WebServer/resources/
+        HttpConn::userCount = 0;                        // 用户数
+        HttpConn::srcDir = srcDir_;                     // 资源路径赋值
+        SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 初始化连接池
 
-    InitEventMode_(trigMode);                                                                   // 初始化事件模式
-    if(!InitSocket_()) { isClose_ = true;}                                                      // 初始化套接子
+        InitEventMode_(trigMode);                                                                   // 初始化事件模式
+        if(!InitSocket_()) { isClose_ = true;}                                                      // 初始化套接子
 
-    if(openLog) {
-        Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
-        if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
-        else {
-            LOG_INFO("========== Server init ==========");
-            LOG_INFO("Port:%d, OpenLinger: %s", port_, OptLinger? "true":"false");
-            LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
-                            (listenEvent_ & EPOLLET ? "ET": "LT"),
-                            (connEvent_ & EPOLLET ? "ET": "LT"));
-            LOG_INFO("LogSys level: %d", logLevel);
-            LOG_INFO("srcDir: %s", HttpConn::srcDir);
-            LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
+        if(openLog) {
+            Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
+            if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
+            else {
+                LOG_INFO("========== Server init ==========");
+                LOG_INFO("Port:%d, OpenLinger: %s", port_, OptLinger? "true":"false");
+                LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
+                                (listenEvent_ & EPOLLET ? "ET": "LT"),
+                                (connEvent_ & EPOLLET ? "ET": "LT"));
+                LOG_INFO("LogSys level: %d", logLevel);
+                LOG_INFO("srcDir: %s", HttpConn::srcDir);
+                LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
+            }
         }
     }
-}
 
 WebServer::~WebServer() {
     close(listenFd_);
@@ -48,13 +42,13 @@ WebServer::~WebServer() {
     SqlConnPool::Instance()->ClosePool();
 }
 
-// 设置监听的文件描述符和通信的文件描述法符的模式
+/* 设置监听的文件描述符和通信的文件描述法符的模式 */
 void WebServer::InitEventMode_(int trigMode) {
     listenEvent_ = EPOLLRDHUP;                  // 监听事件，检测读关闭
     connEvent_ = EPOLLONESHOT | EPOLLRDHUP;     // 连接事件，
     switch (trigMode)
     {
-    case 0:
+    case 0: 
         break;
     case 1:
         connEvent_ |= EPOLLET;                  // 加上 ET 模式，默认 LT 模式
@@ -87,21 +81,19 @@ void WebServer::Start() {
             int fd = epoller_->GetEventFd(i);
             uint32_t events = epoller_->GetEvents(i);
             if(fd == listenFd_) {
-                DealListen_();
+                DealListen_();                      // 处理监听事件
             }
             else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                 assert(users_.count(fd) > 0);
-                CloseConn_(&users_[fd]);
+                CloseConn_(&users_[fd]);            // 出错关闭连接
             }
             else if(events & EPOLLIN) {
                 assert(users_.count(fd) > 0);
-                DealRead_(&users_[fd]);
+                DealRead_(&users_[fd]);             // 处理读操作
             }
             else if(events & EPOLLOUT) {
                 assert(users_.count(fd) > 0);
-                DealWrite_(&users_[fd]);
-            } else {
-                LOG_ERROR("Unexpected event");
+                DealWrite_(&users_[fd]);            // 处理写操作
             }
         }
     }
@@ -231,7 +223,7 @@ bool WebServer::InitSocket_() {
         LOG_ERROR("Create socket error!", port_);
         return false;
     }
-
+ 
     ret = setsockopt(listenFd_, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger));
     if(ret < 0) {
         close(listenFd_);

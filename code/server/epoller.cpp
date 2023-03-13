@@ -1,11 +1,5 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-19
- * @copyleft Apache 2.0
- */
-
 #include "epoller.h"
-
+// epoll_create：创建epoll对象
 Epoller::Epoller(int maxEvent):epollFd_(epoll_create(512)), events_(maxEvent){  // 构造函数，创建一个epoll，返回文件描述符，设置event叔祖大小
     assert(epollFd_ >= 0 && events_.size() > 0);
 }
@@ -17,9 +11,9 @@ Epoller::~Epoller() {
 bool Epoller::AddFd(int fd, uint32_t events) {  // 添加 fd
     if(fd < 0) return false;
     epoll_event ev = {0};                       // 创建一个 epoll 事件
-    ev.data.fd = fd;                            // 事件文件描述符
+    ev.data.fd = fd;                            // 文件描述符
     ev.events = events;                         // 事件
-    return 0 == epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &ev);
+    return 0 == epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &ev);    // （树根，添加方式，fd，绑定的ev）
 }
 
 bool Epoller::ModFd(int fd, uint32_t events) {
