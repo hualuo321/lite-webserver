@@ -70,20 +70,21 @@ void WebServer::InitEventMode_(int trigMode) {
     HttpConn::isET = (connEvent_ & EPOLLET);    // 是否是 ET 模式
 }
 
+// 服务器开始启动
 void WebServer::Start() {
-    int timeMS = -1;  /* epoll wait timeout == -1 无事件将阻塞 */
+    int timeMS = -1;                            /* epoll wait timeout == -1 无事件将阻塞 */
     if(!isClose_) { LOG_INFO("========== Server start =========="); }
-    while(!isClose_) {
-        if(timeoutMS_ > 0) {
-            timeMS = timer_->GetNextTick();
+    while(!isClose_) {                          // 如果开启
+        if(timeoutMS_ > 0) {                    
+            timeMS = timer_->GetNextTick();     // 解决超时链接
         }
-        int eventCnt = epoller_->Wait(timeMS);
+        int eventCnt = epoller_->Wait(timeMS);  // 检测有多少个
         for(int i = 0; i < eventCnt; i++) {
             /* 处理事件 */
-            int fd = epoller_->GetEventFd(i);
-            uint32_t events = epoller_->GetEvents(i);
+            int fd = epoller_->GetEventFd(i);           // 获取fd
+            uint32_t events = epoller_->GetEvents(i);   // 获取事件列表
             if(fd == listenFd_) {
-                DealListen_();                      // 处理监听事件
+                DealListen_();                      // 处理监听事件，接收客户端连接
             }
             else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                 assert(users_.count(fd) > 0);
@@ -110,49 +111,54 @@ void WebServer::SendError_(int fd, const char*info) {
     close(fd);
 }
 
+// 关闭客户端连接
 void WebServer::CloseConn_(HttpConn* client) {
     assert(client);
     LOG_INFO("Client[%d] quit!", client->GetFd());
-    epoller_->DelFd(client->GetFd());
-    client->Close();
+    epoller_->DelFd(client->GetFd());   // 删除 fd
+    client->Close();                    // 关闭
 }
 
+// 添加客户端连接
 void WebServer::AddClient_(int fd, sockaddr_in addr) {
     assert(fd > 0);
-    users_[fd].init(fd, addr);
+    users_[fd].init(fd, addr);              // 保存用户信息<fd，对应信息>
     if(timeoutMS_ > 0) {
         timer_->add(fd, timeoutMS_, std::bind(&WebServer::CloseConn_, this, &users_[fd]));
     }
-    epoller_->AddFd(fd, EPOLLIN | connEvent_);
-    SetFdNonblock(fd);
+    epoller_->AddFd(fd, EPOLLIN | connEvent_);      // 新连接的 fd 加入到 epoll，读事件
+    SetFdNonblock(fd);                              // 非阻塞
     LOG_INFO("Client[%d] in!", users_[fd].GetFd());
 }
 
+// 处理监听事件
 void WebServer::DealListen_() {
-    struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
+    struct sockaddr_in addr;                            // 保存连接客户端的信息
+    socklen_t len = sizeof(addr);                      
     do {
-        int fd = accept(listenFd_, (struct sockaddr *)&addr, &len);
+        int fd = accept(listenFd_, (struct sockaddr *)&addr, &len); // 接收连接
         if(fd <= 0) { return;}
-        else if(HttpConn::userCount >= MAX_FD) {
-            SendError_(fd, "Server busy!");
-            LOG_WARN("Clients is full!");
+        else if(HttpConn::userCount >= MAX_FD) {                    // 连接数量太多
+            SendError_(fd, "Server busy!");                         // 发送错误信息
+            LOG_WARN("Clients is full!");   
             return;
         }
-        AddClient_(fd, addr);
-    } while(listenEvent_ & EPOLLET);
+        AddClient_(fd, addr);                                       // 添加客户端
+    } while(listenEvent_ & EPOLLET);            // 判断监听事件是否为 ET，那么需要一次性把数据都读完，一直 do
 }
 
+// 处理读操作，将读任务添加到线程池
 void WebServer::DealRead_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
+    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client)); // 将读任务添加到线程池
 }
 
+// 子线程中处理写操作
 void WebServer::DealWrite_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client));
+    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client)); // 将写任务添加到线程池
 }
 
 void WebServer::ExtentTime_(HttpConn* client) {
@@ -160,26 +166,29 @@ void WebServer::ExtentTime_(HttpConn* client) {
     if(timeoutMS_ > 0) { timer_->adjust(client->GetFd(), timeoutMS_); }
 }
 
+// 子线程中处理读操作
 void WebServer::OnRead_(HttpConn* client) {
     assert(client);
     int ret = -1;
     int readErrno = 0;
-    ret = client->read(&readErrno);
-    if(ret <= 0 && readErrno != EAGAIN) {
+    ret = client->read(&readErrno);         // 读取客户端的数据，读到 readbuffer 缓冲区
+    if(ret <= 0 && readErrno != EAGAIN) {   // 出现错误，关闭客户端
         CloseConn_(client);
         return;
     }
-    OnProcess(client);
+    OnProcess(client);                      // 业务逻辑的处理
 }
 
+// 处理业务逻辑，客户端来处理
 void WebServer::OnProcess(HttpConn* client) {
     if(client->process()) {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
+        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);    // 监听是否可写
     } else {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
+        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);     // 监听是否可读
     }
 }
 
+// 子线程中处理读操作
 void WebServer::OnWrite_(HttpConn* client) {
     assert(client);
     int ret = -1;

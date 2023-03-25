@@ -1,25 +1,20 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-15
- * @copyleft Apache 2.0
- */ 
-
 #ifndef HTTP_CONN_H
 #define HTTP_CONN_H
-
 #include <sys/types.h>
 #include <sys/uio.h>     // readv/writev
 #include <arpa/inet.h>   // sockaddr_in
 #include <stdlib.h>      // atoi()
 #include <errno.h>      
-
 #include "../log/log.h"
 #include "../pool/sqlconnRAII.h"
 #include "../buffer/buffer.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 
+
 /* 用户连接信息 */
+//! 客户端主要包含：fd，地址信息，是否关闭，读写缓冲区 等属性
+//! 客户端主要包含：初始化，读写数据，获取fd、地址信息，端口 等操作
 class HttpConn {
 public:
     HttpConn();
@@ -58,11 +53,10 @@ public:
     static std::atomic<int> userCount;      // 当前客户端连接数
 
 private:
-    int fd_;
-    struct  sockaddr_in addr_;
+    int fd_;                                // fd
+    struct  sockaddr_in addr_;              // 连接信息
+    bool isClose_;                          // 是否关闭
 
-    bool isClose_;
-    
     int iovCnt_;
     struct iovec iov_[2];
     
@@ -72,6 +66,5 @@ private:
     HttpRequest request_;
     HttpResponse response_;
 };
-
 
 #endif //HTTP_CONN_H

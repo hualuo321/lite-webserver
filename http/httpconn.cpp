@@ -1,8 +1,3 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-15
- * @copyleft Apache 2.0
- */ 
 #include "httpconn.h"
 using namespace std;
 
@@ -57,14 +52,15 @@ int HttpConn::GetPort() const {
     return addr_.sin_port;
 }
 
+// 客户端读数据
 ssize_t HttpConn::read(int* saveErrno) {
     ssize_t len = -1;
     do {
-        len = readBuff_.ReadFd(fd_, saveErrno);
+        len = readBuff_.ReadFd(fd_, saveErrno); // 通过 fd 读数据到缓冲区，获取读取的长度 
         if (len <= 0) {
             break;
         }
-    } while (isET);
+    } while (isET);                             // ET 模式一次性读完
     return len;
 }
 
@@ -94,19 +90,20 @@ ssize_t HttpConn::write(int* saveErrno) {
     return len;
 }
 
+// 客户端处理请求
 bool HttpConn::process() {
-    request_.Init();
+    request_.Init();                                        // HTTP 请求初始化
     if(readBuff_.ReadableBytes() <= 0) {
         return false;
     }
-    else if(request_.parse(readBuff_)) {
+    else if(request_.parse(readBuff_)) {                    // 请求解析读缓冲区
         LOG_DEBUG("%s", request_.path().c_str());
-        response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
+        response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);   // 解析成功则响应初始化
     } else {
         response_.Init(srcDir, request_.path(), false, 400);
     }
 
-    response_.MakeResponse(writeBuff_);
+    response_.MakeResponse(writeBuff_);                     // 将响应信息放入写缓冲区
     /* 响应头 */
     iov_[0].iov_base = const_cast<char*>(writeBuff_.Peek());
     iov_[0].iov_len = writeBuff_.ReadableBytes();

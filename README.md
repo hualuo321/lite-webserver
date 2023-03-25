@@ -1,6 +1,10 @@
 # lite-webserver
 一个极简版的 webserver 项目
 
+# STL
+buffer 用 vector<char> 存储
+
+
 # 前置知识
 - [文件描述符](https://blog.csdn.net/yushuaigee/article/details/107883964)
 - [进程、线程基础知识](https://xiaolincoding.com/os/4_process/process_base.html#%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95)
