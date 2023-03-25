@@ -1,12 +1,6 @@
 # lite-webserver
 一个极简版的 webserver 项目
 
-# 项目地址
-- [本项目地址](https://github.com/hualuo321/lite-webserver)
-- git clone https://github.com/hualuo321/lite-webserver.git
-- [参考项目地址](https://github.com/markparticle/WebServer)
-- git clone https://github.com/markparticle/WebServer.git
-
 # 前置知识
 - [文件描述符](https://blog.csdn.net/yushuaigee/article/details/107883964)
 - [进程、线程基础知识](https://xiaolincoding.com/os/4_process/process_base.html#%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95)
