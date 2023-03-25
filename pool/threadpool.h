@@ -9,6 +9,7 @@
 // 线程池类
 class ThreadPool {
 public:
+    // explict 防止构造函数的隐式转换，只能通过构造函数创建。
     explicit ThreadPool(size_t threadCount = 8): pool_(std::make_shared<Pool>()) {  // 构造函数，一共8个线程
             assert(threadCount > 0);
             for(size_t i = 0; i < threadCount; i++) {                               // 创建8个子线程
@@ -23,7 +24,8 @@ public:
                             locker.lock();                                          // 加锁
                         } 
                         else if(pool->isClosed) break;                              // 如果优雅关闭，则关闭
-                        else pool->cond.wait(locker);                               // 否则，线程休眠
+                        // 只要为空就唤醒
+                        else pool->cond.wait(locker);                               // 否则，线程休眠。条件变量休眠
                     }
                 }).detach();                                                        // 线程分离
             }
@@ -33,23 +35,24 @@ public:
 
     ThreadPool(ThreadPool&&) = default;
     
-    ~ThreadPool() {                             // 析构
+    ~ThreadPool() {                             // 析构函数
         if(static_cast<bool>(pool_)) {
             {
                 std::lock_guard<std::mutex> locker(pool_->mtx);
-                pool_->isClosed = true;
+                pool_->isClosed = true;         // 关闭
             }
-            pool_->cond.notify_all();
+            pool_->cond.notify_all();           // 把所带线程偶读唤醒              
         }
     }
 
+    // 只要添加一个就唤醒
     template<typename F>
-    void AddTask(F&& task) {                                        // 添加任务
+    void AddTask(F&& task) {                                        // 添加任务时  引用任务
         {
             std::lock_guard<std::mutex> locker(pool_->mtx);         
             pool_->tasks.emplace(std::forward<F>(task));            // 将任务 task 添加到队列 tasks
         }
-        pool_->cond.notify_one();                                   // 当有任务到达时，通知线程 -> L31
+        pool_->cond.notify_one();                                   // 当有任务到达时，通知线程。条件变量唤醒。
     }
 
 private:
@@ -64,4 +67,4 @@ private:
 
 #endif //THREADPOOL_H
 
-// 用到 queue 来保存任务。
+// 用到 queue 来保存任务。queue 定义在线程池 Pool 中
