@@ -15,16 +15,16 @@
 
 class Epoller {
 public:
-    explicit Epoller(int maxEvent = 1024);  // 最大事件数
+    explicit Epoller(int maxEvent = 1024);  // 最大检测的事件数
 
     ~Epoller();
     // 从epoll中添加fd
     bool AddFd(int fd, uint32_t events);
     // 修改fd
     bool ModFd(int fd, uint32_t events);
-
+    // 删除fd
     bool DelFd(int fd);
-
+    // 调用内核帮我们检测
     int Wait(int timeoutMs = -1);
 
     int GetEventFd(size_t i) const;
