@@ -16,9 +16,10 @@ WebServer::WebServer(
         HttpConn::srcDir = srcDir_;                     // 资源路径赋值
         SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 初始化连接池
 
-        InitEventMode_(trigMode);                                                                   // 初始化事件模式
-        if(!InitSocket_()) { isClose_ = true;}                                                      // 初始化套接子
+        InitEventMode_(trigMode);                          // 初始化事件模式
+        if(!InitSocket_()) { isClose_ = true;}             // 初始化套接子，如果没有成功，关闭服务器
 
+        // 日志相关
         if(openLog) {
             Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
             if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
@@ -204,14 +205,14 @@ void WebServer::OnWrite_(HttpConn* client) {
 /* Create listenFd */
 bool WebServer::InitSocket_() {
     int ret;
-    struct sockaddr_in addr;
-    if(port_ > 65535 || port_ < 1024) {
+    struct sockaddr_in addr;                    // 套接字地址
+    if(port_ > 65535 || port_ < 1024) {         // 端口号要正确
         LOG_ERROR("Port:%d error!",  port_);
         return false;
     }
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons(port_);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);   // 字节序转换
+    addr.sin_port = htons(port_);               // 端口号转换
     struct linger optLinger = { 0 };
     if(openLinger_) {
         /* 优雅关闭: 直到所剩数据发送完毕或超时 */
@@ -219,7 +220,7 @@ bool WebServer::InitSocket_() {
         optLinger.l_linger = 1;
     }
 
-    listenFd_ = socket(AF_INET, SOCK_STREAM, 0);
+    listenFd_ = socket(AF_INET, SOCK_STREAM, 0);    // 创建文件描述符的socket
     if(listenFd_ < 0) {
         LOG_ERROR("Create socket error!", port_);
         return false;
@@ -242,33 +243,34 @@ bool WebServer::InitSocket_() {
         return false;
     }
 
-    ret = bind(listenFd_, (struct sockaddr *)&addr, sizeof(addr));
+    ret = bind(listenFd_, (struct sockaddr *)&addr, sizeof(addr));  // 绑定IP,端口
     if(ret < 0) {
         LOG_ERROR("Bind Port:%d error!", port_);
         close(listenFd_);
         return false;
     }
 
-    ret = listen(listenFd_, 6);
+    ret = listen(listenFd_, 6);     // 监听ing
     if(ret < 0) {
         LOG_ERROR("Listen port:%d error!", port_);
         close(listenFd_);
         return false;
     }
-    ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);
+    ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);  // ET模式，添加fd
     if(ret == 0) {
         LOG_ERROR("Add listen error!");
         close(listenFd_);
         return false;
     }
-    SetFdNonblock(listenFd_);
+    SetFdNonblock(listenFd_);           // 设置为非阻塞
     LOG_INFO("Server port:%d", port_);
     return true;
 }
 
-int WebServer::SetFdNonblock(int fd) {
+// 设置 fd 非阻塞
+int WebServer::SetFdNonblock(int fd) {      // 获取原先的值
     assert(fd > 0);
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);  // 设置一下
 }
 
 
