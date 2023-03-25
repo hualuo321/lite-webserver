@@ -2,7 +2,7 @@
 一个极简版的 webserver 项目
 
 # STL
-buffer 用 vector<char> 存储
+buffer 用 vector<char> 存储，而且给封装成了一个 Buffer 类，可以实现自动增长。
 
 
 # 前置知识

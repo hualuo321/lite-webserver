@@ -1,19 +1,19 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-26
- * @copyleft Apache 2.0
- */ 
 #include "buffer.h"
 
+// 初始化构造函数，默认大小为1024
 Buffer::Buffer(int initBuffSize) : buffer_(initBuffSize), readPos_(0), writePos_(0) {}
 
+// 当前可读字节数
 size_t Buffer::ReadableBytes() const {
     return writePos_ - readPos_;
 }
+
+// 当前可写字节数
 size_t Buffer::WritableBytes() const {
     return buffer_.size() - writePos_;
 }
 
+// 当前已读字节数
 size_t Buffer::PrependableBytes() const {
     return readPos_;
 }
@@ -83,24 +83,25 @@ void Buffer::EnsureWriteable(size_t len) {
     assert(WritableBytes() >= len);
 }
 
+// 读 fd
 ssize_t Buffer::ReadFd(int fd, int* saveErrno) {
-    char buff[65535];
+    char buff[65535];       // 临时的数组，保证能够把所有数据都存起来 64M
     struct iovec iov[2];
     const size_t writable = WritableBytes();
     /* 分散读， 保证数据全部读完 */
-    iov[0].iov_base = BeginPtr_() + writePos_;
-    iov[0].iov_len = writable;
-    iov[1].iov_base = buff;
-    iov[1].iov_len = sizeof(buff);
+    iov[0].iov_base = BeginPtr_() + writePos_;  // 从哪儿开始写
+    iov[0].iov_len = writable;                  // 可以写的大小
+    iov[1].iov_base = buff;                     // 临时缓冲区，防止初始的缓冲区不够用，比如传图片太大了
+    iov[1].iov_len = sizeof(buff);              // 临时缓冲区的大小
 
     const ssize_t len = readv(fd, iov, 2);
     if(len < 0) {
-        *saveErrno = errno;
+        *saveErrno = errno;                     // 记录下错误
     }
-    else if(static_cast<size_t>(len) <= writable) {
+    else if(static_cast<size_t>(len) <= writable) { // 剩余的空间完全装得下
         writePos_ += len;
     }
-    else {
+    else {                                      // 
         writePos_ = buffer_.size();
         Append(buff, len - writable);
     }

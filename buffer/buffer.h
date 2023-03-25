@@ -1,9 +1,3 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-26
- * @copyleft Apache 2.0
- */ 
-
 #ifndef BUFFER_H
 #define BUFFER_H
 #include <cstring>   //perror
@@ -13,14 +7,15 @@
 #include <vector> //readv
 #include <atomic>
 #include <assert.h>
+/*数据存放的位置，利用STL里面的vector<char>，实现一个自动增长的缓冲区*/
 class Buffer {
 public:
-    Buffer(int initBuffSize = 1024);
+    Buffer(int initBuffSize = 1024);        // 初始化大小
     ~Buffer() = default;
 
-    size_t WritableBytes() const;       
-    size_t ReadableBytes() const ;
-    size_t PrependableBytes() const;
+    size_t WritableBytes() const;           // 可写字节数
+    size_t ReadableBytes() const ;          // 可读字节数
+    size_t PrependableBytes() const;        // 可追加字节数
 
     const char* Peek() const;
     void EnsureWriteable(size_t len);
@@ -44,13 +39,13 @@ public:
     ssize_t WriteFd(int fd, int* Errno);
 
 private:
-    char* BeginPtr_();
-    const char* BeginPtr_() const;
-    void MakeSpace_(size_t len);
+    char* BeginPtr_();                  // 开始指针
+    const char* BeginPtr_() const;      // 重载
+    void MakeSpace_(size_t len);        // 创建新的空间
 
-    std::vector<char> buffer_;
-    std::atomic<std::size_t> readPos_;
-    std::atomic<std::size_t> writePos_;
+    std::vector<char> buffer_;              // 具体装数据的vector
+    std::atomic<std::size_t> readPos_;      // 目前读的位置 
+    std::atomic<std::size_t> writePos_;     // 目前写的位置
 };
 
 #endif //BUFFER_H
