@@ -1,7 +1,7 @@
 #include "webserver.h"
 using namespace std;
 
-
+// 服务器构造函数
 WebServer::WebServer(
         int port, int trigMode, int timeoutMS, bool OptLinger,
         int sqlPort, const char* sqlUser, const  char* sqlPwd,
@@ -9,9 +9,9 @@ WebServer::WebServer(
         bool openLog, int logLevel, int logQueSize):
     port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false),
     timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
-        srcDir_ = getcwd(nullptr, 256);                 // 获取当前工作路径 /home/xch/Codes/cpp/WebServer
+        srcDir_ = getcwd(nullptr, 256);                 // 获取当前工作路径 
         assert(srcDir_);                                // 断言
-        strncat(srcDir_, "/resources/", 16);            // 资源路径 /home/xch/Codes/cpp/WebServer/resources/
+        strncat(srcDir_, "/resources/", 16);            // 资源路径 
         HttpConn::userCount = 0;                        // 用户数
         HttpConn::srcDir = srcDir_;                     // 资源路径赋值
         SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 初始化连接池
@@ -35,6 +35,7 @@ WebServer::WebServer(
         }
     }
 
+// 服务器析构函数
 WebServer::~WebServer() {
     close(listenFd_);
     isClose_ = true;
@@ -54,7 +55,7 @@ void WebServer::InitEventMode_(int trigMode) {
         connEvent_ |= EPOLLET;                  // 加上 ET 模式，默认 LT 模式
         break;
     case 2:
-        listenEvent_ |= EPOLLET;
+        listenEvent_ |= EPOLLET;                // 其他的情况
         break;
     case 3:
         listenEvent_ |= EPOLLET;

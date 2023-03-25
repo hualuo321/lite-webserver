@@ -1,11 +1,5 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-17
- * @copyleft Apache 2.0
- */ 
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
-
 #include <unordered_map>
 #include <fcntl.h>       // fcntl()
 #include <unistd.h>      // close()
@@ -14,7 +8,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "epoller.h"
 #include "../log/log.h"
 #include "../timer/heaptimer.h"
@@ -23,6 +16,7 @@
 #include "../pool/sqlconnRAII.h"
 #include "../http/httpconn.h"
 
+// 服务器类
 class WebServer {
 public:
     WebServer (                                                 // 构造函数声明
@@ -37,17 +31,17 @@ public:
     void Start();                                               // 服务启动
 
 private:
-    bool InitSocket_(); 
-    void InitEventMode_(int trigMode);
-    void AddClient_(int fd, sockaddr_in addr);
+    bool InitSocket_();                                         // 初始化套接字
+    void InitEventMode_(int trigMode);                          // 初始化事件模式
+    void AddClient_(int fd, sockaddr_in addr);                  // 添加已连接 fd
 
-    void DealListen_();
-    void DealWrite_(HttpConn* client);
-    void DealRead_(HttpConn* client);
+    void DealListen_();                                         // 处理监听
+    void DealWrite_(HttpConn* client);                          // 读
+    void DealRead_(HttpConn* client);                           // 写
 
-    void SendError_(int fd, const char*info);
+    void SendError_(int fd, const char*info);               
     void ExtentTime_(HttpConn* client);
-    void CloseConn_(HttpConn* client);
+    void CloseConn_(HttpConn* client);                          //  关闭连接
 
     void OnRead_(HttpConn* client);
     void OnWrite_(HttpConn* client);
