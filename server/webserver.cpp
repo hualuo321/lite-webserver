@@ -71,19 +71,19 @@ void WebServer::InitEventMode_(int trigMode) {
 }
 
 // 服务器开始启动
-void WebServer::Start() {
+void WebServer::Start() {                       //? (1) 服务器在这里启动
     int timeMS = -1;                            /* epoll wait timeout == -1 无事件将阻塞 */
     if(!isClose_) { LOG_INFO("========== Server start =========="); }
     while(!isClose_) {                          // 如果开启
         if(timeoutMS_ > 0) {                    
             timeMS = timer_->GetNextTick();     // 解决超时链接
         }
-        int eventCnt = epoller_->Wait(timeMS);  // 检测有多少个
+        int eventCnt = epoller_->Wait(timeMS);  // 检测有多少个     //? (2) 然后不断地监听事件到达
         for(int i = 0; i < eventCnt; i++) {
             /* 处理事件 */
             int fd = epoller_->GetEventFd(i);           // 获取fd
             uint32_t events = epoller_->GetEvents(i);   // 获取事件列表
-            if(fd == listenFd_) {
+            if(fd == listenFd_) {                                   //? (3) 如果监听到事件，并且为连接事件，那么就连接新客户端
                 DealListen_();                      // 处理监听事件，接收客户端连接
             }
             else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
@@ -92,11 +92,11 @@ void WebServer::Start() {
             }
             else if(events & EPOLLIN) {
                 assert(users_.count(fd) > 0);
-                DealRead_(&users_[fd]);             // 处理读操作
+                DealRead_(&users_[fd]);             // 处理读操作   //? (5) 如果监听到事件，并且为读事件，那么读任务添加到线程池里面
             }
             else if(events & EPOLLOUT) {
                 assert(users_.count(fd) > 0);
-                DealWrite_(&users_[fd]);            // 处理写操作
+                DealWrite_(&users_[fd]);            // 处理写操作   //? (10） 写完修改fd为写后继续监听，如果监听到事件，并且为写事件，那么写任务添加到线程池里
             }
         }
     }
@@ -143,7 +143,7 @@ void WebServer::DealListen_() {
             LOG_WARN("Clients is full!");   
             return;
         }
-        AddClient_(fd, addr);                                       // 添加客户端
+        AddClient_(fd, addr);                                       // 添加客户端       //? (4) 连接上新客户端后，记得把新的 fd 添加到 epoll 里面
     } while(listenEvent_ & EPOLLET);            // 判断监听事件是否为 ET，那么需要一次性把数据都读完，一直 do
 }
 
@@ -151,14 +151,14 @@ void WebServer::DealListen_() {
 void WebServer::DealRead_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client)); // 将读任务添加到线程池
+    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client)); // 将读任务添加到线程池 //? (6) 池子里添加的有任务，就让条件变量通知工作线程，让他们干活
 }
 
 // 子线程中处理写操作
 void WebServer::DealWrite_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client)); // 将写任务添加到线程池
+    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client)); // 将写任务添加到线程池 //? (11) 池子里添加的有任务，就让条件变量通知工作线程，让他们干活
 }
 
 void WebServer::ExtentTime_(HttpConn* client) {
@@ -167,7 +167,7 @@ void WebServer::ExtentTime_(HttpConn* client) {
 }
 
 // 子线程中处理读操作
-void WebServer::OnRead_(HttpConn* client) {
+void WebServer::OnRead_(HttpConn* client) {                 //? (7） 工作线程进行读操作
     assert(client);
     int ret = -1;
     int readErrno = 0;
@@ -176,13 +176,13 @@ void WebServer::OnRead_(HttpConn* client) {
         CloseConn_(client);
         return;
     }
-    OnProcess(client);                      // 业务逻辑的处理
+    OnProcess(client);                      // 业务逻辑的处理 //? (8） 读完后工作线程进行业务处理，解析HTTP请求，产生响应
 }
 
 // 处理业务逻辑，客户端来处理
 void WebServer::OnProcess(HttpConn* client) {
     if(client->process()) {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);    // 监听是否可写
+        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);    //? (9） 解析完HTTP获得响应后，将之前的读事件改成写事件。
     } else {
         epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);     // 监听是否可读
     }

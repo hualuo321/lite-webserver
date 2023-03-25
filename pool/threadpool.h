@@ -52,7 +52,7 @@ public:
             std::lock_guard<std::mutex> locker(pool_->mtx);         
             pool_->tasks.emplace(std::forward<F>(task));            // 将任务 task 添加到队列 tasks
         }
-        pool_->cond.notify_one();                                   // 当有任务到达时，通知线程。条件变量唤醒。
+        pool_->cond.notify_one();     // 当有任务到达时，通知线程。条件变量唤醒。 
     }
 
 private:

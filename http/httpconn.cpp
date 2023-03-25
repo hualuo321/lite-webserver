@@ -98,12 +98,12 @@ bool HttpConn::process() {
     }
     else if(request_.parse(readBuff_)) {                    // 请求解析读缓冲区
         LOG_DEBUG("%s", request_.path().c_str());
-        response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);   // 解析成功则响应初始化
+        response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);   // 解析成功则初始化响应
     } else {
         response_.Init(srcDir, request_.path(), false, 400);
     }
 
-    response_.MakeResponse(writeBuff_);                     // 将响应信息放入写缓冲区
+    response_.MakeResponse(writeBuff_);                     // 将 response 里的响应信息放入写缓冲区
     /* 响应头 */
     iov_[0].iov_base = const_cast<char*>(writeBuff_.Peek());
     iov_[0].iov_len = writeBuff_.ReadableBytes();
