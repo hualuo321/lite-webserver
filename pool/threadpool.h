@@ -1,17 +1,12 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-15
- * @copyleft Apache 2.0
- */ 
-
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
+#include <mutex>                    // 互斥锁
+#include <condition_variable>       // 条件变量
+#include <queue>                    // 队列
+#include <thread>                   // 线程
+#include <functional>               // 函数
 
-#include <mutex>
-#include <condition_variable>
-#include <queue>
-#include <thread>
-#include <functional>
+// 线程池类
 class ThreadPool {
 public:
     explicit ThreadPool(size_t threadCount = 8): pool_(std::make_shared<Pool>()) {  // 构造函数，一共8个线程
@@ -34,11 +29,11 @@ public:
             }
     }
 
-    ThreadPool() = default;
+    ThreadPool() = default;                     // 构造
 
     ThreadPool(ThreadPool&&) = default;
     
-    ~ThreadPool() {
+    ~ThreadPool() {                             // 析构
         if(static_cast<bool>(pool_)) {
             {
                 std::lock_guard<std::mutex> locker(pool_->mtx);
@@ -68,3 +63,5 @@ private:
 };
 
 #endif //THREADPOOL_H
+
+// 用到 queue 来保存任务。
