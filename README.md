@@ -3,7 +3,7 @@
 
 # STL
 buffer 用 vector<char> 存储，而且给封装成了一个 Buffer 类，可以实现自动增长。
-
+unorided_map 可以保存状态码，路径等信息。
 
 # 前置知识
 - [文件描述符](https://blog.csdn.net/yushuaigee/article/details/107883964)

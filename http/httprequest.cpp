@@ -1,14 +1,9 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-26
- * @copyleft Apache 2.0
- */ 
 #include "httprequest.h"
 using namespace std;
 
 const unordered_set<string> HttpRequest::DEFAULT_HTML{
             "/index", "/register", "/login",
-             "/welcome", "/video", "/picture", };
+            "/welcome", "/video", "/picture", };
 
 const unordered_map<string, int> HttpRequest::DEFAULT_HTML_TAG {
             {"/register.html", 0}, {"/login.html", 1},  };
@@ -28,20 +23,20 @@ bool HttpRequest::IsKeepAlive() const {
 }
 
 bool HttpRequest::parse(Buffer& buff) {
-    const char CRLF[] = "\r\n";
-    if(buff.ReadableBytes() <= 0) {
+    const char CRLF[] = "\r\n";         // 回车换行，行的末尾 
+    if(buff.ReadableBytes() <= 0) {     
         return false;
     }
-    while(buff.ReadableBytes() && state_ != FINISH) {
-        const char* lineEnd = search(buff.Peek(), buff.BeginWriteConst(), CRLF, CRLF + 2);
-        std::string line(buff.Peek(), lineEnd);
-        switch(state_)
+    while(buff.ReadableBytes() && state_ != FINISH) {   // 有数据可读且状态不为完成，则获取数据并解析
+        const char* lineEnd = search(buff.Peek(), buff.BeginWriteConst(), CRLF, CRLF + 2);  // 获取一行数据
+        std::string line(buff.Peek(), lineEnd); // 将字符封装到line
+        switch(state_)                      // 状态转换
         {
         case REQUEST_LINE:
-            if(!ParseRequestLine_(line)) {
+            if(!ParseRequestLine_(line)) {  // 解析行，且状态改编为 头
                 return false;
             }
-            ParsePath_();
+            ParsePath_();           // 成功后解析路径
             break;    
         case HEADERS:
             ParseHeader_(line);
@@ -56,7 +51,7 @@ bool HttpRequest::parse(Buffer& buff) {
             break;
         }
         if(lineEnd == buff.BeginWrite()) { break; }
-        buff.RetrieveUntil(lineEnd + 2);
+        buff.RetrieveUntil(lineEnd + 2);            // 
     }
     LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
     return true;
@@ -75,15 +70,16 @@ void HttpRequest::ParsePath_() {
         }
     }
 }
-
+// 解析请求行
 bool HttpRequest::ParseRequestLine_(const string& line) {
-    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
+    // 匹配 // GET / HTTP/1.1
+    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$"); // 正则表达式
     smatch subMatch;
-    if(regex_match(line, subMatch, patten)) {   
-        method_ = subMatch[1];
+    if(regex_match(line, subMatch, patten)) {   // 匹配成功
+        method_ = subMatch[1];              // 将数据放入变量
         path_ = subMatch[2];
         version_ = subMatch[3];
-        state_ = HEADERS;
+        state_ = HEADERS;                   // 并修改状态
         return true;
     }
     LOG_ERROR("RequestLine Error");
@@ -91,9 +87,9 @@ bool HttpRequest::ParseRequestLine_(const string& line) {
 }
 
 void HttpRequest::ParseHeader_(const string& line) {
-    regex patten("^([^:]*): ?(.*)$");
+    regex patten("^([^:]*): ?(.*)$");           // 正则表达式
     smatch subMatch;
-    if(regex_match(line, subMatch, patten)) {
+    if(regex_match(line, subMatch, patten)) {   // 
         header_[subMatch[1]] = subMatch[2];
     }
     else {
@@ -101,6 +97,7 @@ void HttpRequest::ParseHeader_(const string& line) {
     }
 }
 
+// 解析体
 void HttpRequest::ParseBody_(const string& line) {
     body_ = line;
     ParsePost_();

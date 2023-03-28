@@ -1,8 +1,3 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-25
- * @copyleft Apache 2.0
- */ 
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
@@ -21,13 +16,13 @@
 class HttpRequest {
 public:
     enum PARSE_STATE {
-        REQUEST_LINE,
-        HEADERS,
-        BODY,
-        FINISH,        
+        REQUEST_LINE,   // 正在解析请求行
+        HEADERS,        // 将诶请求头
+        BODY,           // 请求体
+        FINISH,         // 完成
     };
 
-    enum HTTP_CODE {
+    enum HTTP_CODE {    // 各种访问状态
         NO_REQUEST = 0,
         GET_REQUEST,
         BAD_REQUEST,
@@ -60,23 +55,23 @@ public:
     */
 
 private:
-    bool ParseRequestLine_(const std::string& line);
-    void ParseHeader_(const std::string& line);
-    void ParseBody_(const std::string& line);
+    bool ParseRequestLine_(const std::string& line);    // 解析请求行
+    void ParseHeader_(const std::string& line);         // 解析请求头
+    void ParseBody_(const std::string& line);           // 解析请求体
 
-    void ParsePath_();
-    void ParsePost_();
-    void ParseFromUrlencoded_();
-
+    void ParsePath_();                      // 解析路径
+    void ParsePost_();                      // 解析POST
+    void ParseFromUrlencoded_();            // 解析表单数据
+    // 验证用户登陆注册
     static bool UserVerify(const std::string& name, const std::string& pwd, bool isLogin);
 
-    PARSE_STATE state_;
-    std::string method_, path_, version_, body_;
-    std::unordered_map<std::string, std::string> header_;
+    PARSE_STATE state_;                                     // 解析状态
+    std::string method_, path_, version_, body_;            // 请求方法
+    std::unordered_map<std::string, std::string> header_;   
     std::unordered_map<std::string, std::string> post_;
 
-    static const std::unordered_set<std::string> DEFAULT_HTML;
-    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+    static const std::unordered_set<std::string> DEFAULT_HTML;  // 默认网页
+    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG; // 转换成16进制
     static int ConverHex(char ch);
 };
 

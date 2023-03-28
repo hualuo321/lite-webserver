@@ -1,8 +1,3 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-25
- * @copyleft Apache 2.0
- */ 
 #ifndef HTTP_RESPONSE_H
 #define HTTP_RESPONSE_H
 
@@ -36,18 +31,18 @@ private:
     void ErrorHtml_();
     std::string GetFileType_();
 
-    int code_;
-    bool isKeepAlive_;
+    int code_;              // 响应状态码
+    bool isKeepAlive_;      // 保持连接
 
-    std::string path_;
-    std::string srcDir_;
+    std::string path_;      // 资源的路径
+    std::string srcDir_;    // 资源的目录
     
-    char* mmFile_; 
-    struct stat mmFileStat_;
+    char* mmFile_;              // 文件内存映射的指针
+    struct stat mmFileStat_;    // 文件的状态信息
 
-    static const std::unordered_map<std::string, std::string> SUFFIX_TYPE;
-    static const std::unordered_map<int, std::string> CODE_STATUS;
-    static const std::unordered_map<int, std::string> CODE_PATH;
+    static const std::unordered_map<std::string, std::string> SUFFIX_TYPE;  // 后缀-类型
+    static const std::unordered_map<int, std::string> CODE_STATUS;          // 后缀-描述
+    static const std::unordered_map<int, std::string> CODE_PATH;            // 后缀-路径
 };
 
 
